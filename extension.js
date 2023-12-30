@@ -85,15 +85,13 @@ class Extension {
   applyHiddenIcons() {
     this.knownIcons.forEach((iconRole) => {
       if (iconRole === "iconHiderUpdatedIndicator") {
-        return; // Skip hiding/showing the extension's own indicator
+        return;
       }
       if (this.hiddenIcons.has(iconRole)) {
-        // If the iconRole is in the hiddenIcons set, hide it
         if (this.statusArea[iconRole]) {
           this.statusArea[iconRole].hide();
         }
       } else {
-        // If the iconRole is not in the hiddenIcons set, show it
         if (this.statusArea[iconRole]) {
           this.statusArea[iconRole].show();
         }
@@ -117,7 +115,7 @@ class Extension {
       this.applyHiddenIcons();
       this._createIndicator();
       this._setupMenu();
-      this._updateIndicatorVisibility(); // Set initial visibility
+      this._updateIndicatorVisibility();
 
       // Existing listener for the hide-indicator-icon setting
       this._hideIndicatorIconChangedId = settings.connect(
@@ -131,8 +129,8 @@ class Extension {
       this._hiddenIconsChangedId = settings.connect(
         "changed::hidden-icons",
         () => {
-          this.hiddenIcons = new Set(settings.get_strv("hidden-icons")); // Refresh the set
-          this.applyHiddenIcons(); // Reapply visibility
+          this.hiddenIcons = new Set(settings.get_strv("hidden-icons"));
+          this.applyHiddenIcons();
         }
       );
     }, 500);
