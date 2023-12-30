@@ -3,7 +3,7 @@
   "description": "Show & Hide icons from the top panel",
   "uuid": "icon-hider-updated@lukmomc.com",
   "version": 1,
-  "url": "https://github.com/lukamomc/linuxiconhiderupdated",
+  "url": "https://github.com/lx358hcl/linuxiconhiderupdated",
   "shell-version": ["40", "41", "42"],
   "settings-schema": "org.gnome.shell.extensions.icon-hider-updated",
   "gettext-domain": "org.gnome.shell.extensions.icon-hider-updated"
