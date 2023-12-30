@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist gettext-domain="gnome-shell-extensions">
+  <schema id="org.gnome.shell.extensions.icon-hider-updated" path="/org/gnome/shell/extensions/icon-hider-updated/">
+    <key name="hidden-icons" type="as">
+      <default>[]</default>
+      <summary>List of hidden icons</summary>
+    </key>
+    <key name="known-icons" type="as">
+      <default>[]</default>
+      <summary>List of known icons</summary>
+    </key>
+    <key name="hide-indicator-icon" type="b">
+      <default>false</default>
+      <summary>Whether to hide the extension's indicator icon</summary>
+    </key>
+  </schema>
+</schemalist>

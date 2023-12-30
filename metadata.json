@@ -1,0 +1,10 @@
+{
+  "description": "Show & Hide icons from the top panel",
+  "gettext-domain": "org.gnome.shell.extensions.icon-hider-updated",
+  "name": "Icon Hider Updated",
+  "settings-schema": "org.gnome.shell.extensions.icon-hider-updated",
+  "shell-version": ["40", "41", "42"],
+  "url": "https://github.com/lukamomc/linuxiconhiderupdated",
+  "uuid": "icon-hider-updated@lukmomc.com",
+  "version": 1
+}
