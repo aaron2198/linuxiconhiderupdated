@@ -1,42 +1,42 @@
-const Me = imports.misc.extensionUtils.getCurrentExtension();
+const ExtensionUtils = imports.misc.extensionUtils;
 const { St, Clutter, GObject, Gio } = imports.gi;
 const { main: Main, popupMenu: PopupMenu, panelMenu: PanelMenu } = imports.ui;
-const ExtensionUtils = imports.misc.extensionUtils;
 
-let extension;
-
-// Load GSettings
+const currentExtension = ExtensionUtils.getCurrentExtension();
 const settings = ExtensionUtils.getSettings(
   "org.gnome.shell.extensions.icon-hider-updated"
 );
 
-var Indicator = GObject.registerClass(
-  class Indicator extends PanelMenu.Button {
+let iconHiderExtension;
+
+var IconIndicator = GObject.registerClass(
+  class IconIndicator extends PanelMenu.Button {
     _init() {
-      super._init(0.0, `${Me.metadata.name} Indicator`, false);
+      super._init(0.0, `${currentExtension.metadata.name} Indicator`, false);
       this._buildUI();
     }
 
     _buildUI() {
-      const box = new St.BoxLayout({
-        style_class: "panel-button",
-      });
+      const box = new St.BoxLayout({ style_class: "panel-button" });
       const icon = new St.Icon({
-        style_class: "system-status-icon",
-        gicon: new Gio.ThemedIcon({ name: "view-grid-symbolic" }),
+        icon_name: "view-grid-symbolic",
+        icon_size: 20,
       });
+
       box.add_child(icon);
       this.add_child(box);
     }
   }
 );
 
-class Extension {
-  constructor() {
+class IconHiderExtension {
+  _init() {
     this.statusArea = Main.panel.statusArea;
     this.hiddenIcons = new Set(settings.get_strv("hidden-icons"));
     this.knownIcons = new Set(settings.get_strv("known-icons"));
     this.indicator = null;
+    this._hideIndicatorIconChangedId = null;
+    this._hiddenIconsChangedId = null;
   }
 
   _toggleIconVisibility(iconRole) {
@@ -51,13 +51,8 @@ class Extension {
   }
 
   _createIndicator() {
-    this.indicator = new Indicator();
-    Main.panel.addToStatusArea(
-      "iconHiderUpdatedIndicator",
-      this.indicator,
-      1,
-      "right"
-    );
+    this.indicator = new IconIndicator();
+    Main.panel.addToStatusArea("iconHiderUpdated", this.indicator, 1, "right");
   }
 
   _setupMenu() {
@@ -71,9 +66,20 @@ class Extension {
       });
       this.indicator.menu.addMenuItem(menuItem);
     });
+
+    // Add a separator
+    const separator = new PopupMenu.PopupSeparatorMenuItem();
+    this.indicator.menu.addMenuItem(separator);
+
+    // Add "Open Settings" button
+    const openSettingsItem = new PopupMenu.PopupMenuItem("Open Settings");
+    openSettingsItem.connect("activate", () => {
+      ExtensionUtils.openPrefs();
+    });
+    this.indicator.menu.addMenuItem(openSettingsItem);
   }
 
-  gatherStatusAreaElements() {
+  _gatherStatusAreaElements() {
     Object.keys(this.statusArea).forEach((role) => {
       if (!this.statusArea[role].is_finalized) {
         this.knownIcons.add(role);
@@ -82,42 +88,33 @@ class Extension {
     settings.set_strv("known-icons", Array.from(this.knownIcons));
   }
 
-  applyHiddenIcons() {
+  _applyHiddenIcons() {
     this.knownIcons.forEach((iconRole) => {
-      if (iconRole === "iconHiderUpdatedIndicator") {
-        return;
-      }
+      if (iconRole === "iconHiderUpdated") return;
       if (this.hiddenIcons.has(iconRole)) {
-        if (this.statusArea[iconRole]) {
-          this.statusArea[iconRole].hide();
-        }
+        if (this.statusArea[iconRole]) this.statusArea[iconRole].hide();
       } else {
-        if (this.statusArea[iconRole]) {
-          this.statusArea[iconRole].show();
-        }
+        if (this.statusArea[iconRole]) this.statusArea[iconRole].show();
       }
     });
   }
 
   _updateIndicatorVisibility() {
     if (this.indicator) {
-      if (settings.get_boolean("hide-indicator-icon")) {
-        this.indicator.hide();
-      } else {
-        this.indicator.show();
-      }
+      settings.get_boolean("hide-indicator-icon")
+        ? this.indicator.hide()
+        : this.indicator.show();
     }
   }
 
   enable() {
     setTimeout(() => {
-      this.gatherStatusAreaElements();
-      this.applyHiddenIcons();
+      this._gatherStatusAreaElements();
+      this._applyHiddenIcons();
       this._createIndicator();
       this._setupMenu();
       this._updateIndicatorVisibility();
 
-      // Existing listener for the hide-indicator-icon setting
       this._hideIndicatorIconChangedId = settings.connect(
         "changed::hide-indicator-icon",
         () => {
@@ -125,12 +122,11 @@ class Extension {
         }
       );
 
-      // Listener for changes in hidden-icons
       this._hiddenIconsChangedId = settings.connect(
         "changed::hidden-icons",
         () => {
           this.hiddenIcons = new Set(settings.get_strv("hidden-icons"));
-          this.applyHiddenIcons();
+          this._applyHiddenIcons();
         }
       );
     }, 500);
@@ -150,6 +146,7 @@ class Extension {
 }
 
 function init() {
-  extension = new Extension();
-  return extension;
+  iconHiderExtension = new IconHiderExtension();
+  iconHiderExtension._init();
+  return iconHiderExtension;
 }

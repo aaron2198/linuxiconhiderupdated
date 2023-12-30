@@ -1,4 +1,4 @@
-const { GObject, Gtk, Gio } = imports.gi;
+const { GObject, Gtk, Gio, GLib } = imports.gi;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 
@@ -29,6 +29,7 @@ var IconHiderPrefsWidget = GObject.registerClass(
       this.append(this._grid);
       this._addCheckBox("hide-indicator-icon", "Hide Indicator Icon");
       this._loadIconSwitches();
+      this._addGitHubLink();
     }
 
     _addCheckBox(key, label) {
@@ -82,6 +83,23 @@ var IconHiderPrefsWidget = GObject.registerClass(
         }
         this._settings.set_strv("hidden-icons", Array.from(hiddenIcons));
       });
+    }
+    _addGitHubLink() {
+      let label = new Gtk.Label({
+        label:
+          "<a href='https://github.com/lx358hcl/linuxiconhiderupdated' title='Visit GitHub Repository'>Contribute on GitHub</a>",
+        use_markup: true,
+        halign: Gtk.Align.START,
+      });
+
+      label.connect(
+        "activate-link",
+        GLib.spawn_command_line_async.bind(
+          null,
+          "xdg-open https://github.com/lx358hcl/linuxiconhiderupdated"
+        )
+      );
+      this.append(label);
     }
   }
 );
