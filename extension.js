@@ -18,7 +18,9 @@ var Indicator = GObject.registerClass(
     }
 
     _buildUI() {
-      const box = new St.BoxLayout({ style_class: "panel-button" });
+      const box = new St.BoxLayout({
+        style_class: "panel-button",
+      });
       const icon = new St.Icon({
         style_class: "system-status-icon",
         gicon: new Gio.ThemedIcon({ name: "view-grid-symbolic" }),
@@ -50,7 +52,12 @@ class Extension {
 
   _createIndicator() {
     this.indicator = new Indicator();
-    Main.panel.addToStatusArea("indicator", this.indicator, 1, "right");
+    Main.panel.addToStatusArea(
+      "iconHiderUpdatedIndicator",
+      this.indicator,
+      1,
+      "right"
+    );
   }
 
   _setupMenu() {
@@ -76,9 +83,20 @@ class Extension {
   }
 
   applyHiddenIcons() {
-    this.hiddenIcons.forEach((iconRole) => {
-      if (this.statusArea[iconRole]) {
-        this.statusArea[iconRole].hide();
+    this.knownIcons.forEach((iconRole) => {
+      if (iconRole === "iconHiderUpdatedIndicator") {
+        return; // Skip hiding/showing the extension's own indicator
+      }
+      if (this.hiddenIcons.has(iconRole)) {
+        // If the iconRole is in the hiddenIcons set, hide it
+        if (this.statusArea[iconRole]) {
+          this.statusArea[iconRole].hide();
+        }
+      } else {
+        // If the iconRole is not in the hiddenIcons set, show it
+        if (this.statusArea[iconRole]) {
+          this.statusArea[iconRole].show();
+        }
       }
     });
   }
@@ -101,10 +119,20 @@ class Extension {
       this._setupMenu();
       this._updateIndicatorVisibility(); // Set initial visibility
 
+      // Existing listener for the hide-indicator-icon setting
       this._hideIndicatorIconChangedId = settings.connect(
         "changed::hide-indicator-icon",
         () => {
           this._updateIndicatorVisibility();
+        }
+      );
+
+      // Listener for changes in hidden-icons
+      this._hiddenIconsChangedId = settings.connect(
+        "changed::hidden-icons",
+        () => {
+          this.hiddenIcons = new Set(settings.get_strv("hidden-icons")); // Refresh the set
+          this.applyHiddenIcons(); // Reapply visibility
         }
       );
     }, 500);
@@ -116,9 +144,9 @@ class Extension {
       this._hideIndicatorIconChangedId = null;
     }
 
-    if (this.indicator) {
-      this.indicator.destroy();
-      this.indicator = null;
+    if (this._hiddenIconsChangedId) {
+      settings.disconnect(this._hiddenIconsChangedId);
+      this._hiddenIconsChangedId = null;
     }
   }
 }

@@ -1,7 +1,6 @@
-const { GObject, Gtk } = imports.gi;
+const { GObject, Gtk, Gio } = imports.gi;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
-const Gio = imports.gi.Gio;
 
 function init() {
   ExtensionUtils.initTranslations();
@@ -22,8 +21,14 @@ var IconHiderPrefsWidget = GObject.registerClass(
         "org.gnome.shell.extensions.icon-hider-updated"
       );
 
+      this._grid = new Gtk.Grid({
+        column_spacing: 20,
+        row_spacing: 10,
+        column_homogeneous: false,
+      });
+      this.append(this._grid);
       this._addCheckBox("hide-indicator-icon", "Hide Indicator Icon");
-      // Additional UI components for 'hidden-icons' and 'known-icons' can be added here
+      this._loadIconSwitches();
     }
 
     _addCheckBox(key, label) {
@@ -34,10 +39,50 @@ var IconHiderPrefsWidget = GObject.registerClass(
         "active",
         Gio.SettingsBindFlags.DEFAULT
       );
-      this.append(checkBox); // Use append() for GTK 4 or pack_start() for GTK 3
+      this._grid.attach(checkBox, 0, 0, 2, 1);
     }
 
-    // You can add more methods to create other UI components for 'hidden-icons' and 'known-icons'
+    _loadIconSwitches() {
+      let knownIcons = this._settings.get_strv("known-icons");
+      knownIcons.forEach((icon, index) => {
+        this._addIconSwitch(icon, index + 1);
+      });
+    }
+
+    _addIconSwitch(icon, row) {
+      let switchLabel = `Show ${icon}`;
+      let iconSwitch = new Gtk.Switch({ halign: Gtk.Align.END });
+      let label = new Gtk.Label({ label: switchLabel, xalign: 0 });
+
+      this._grid.attach(label, 0, row, 1, 1);
+      this._grid.attach_next_to(
+        iconSwitch,
+        label,
+        Gtk.PositionType.RIGHT,
+        1,
+        1
+      );
+
+      this._initializeSwitchState(iconSwitch, icon);
+      this._bindSwitchToSettings(iconSwitch, icon);
+    }
+
+    _initializeSwitchState(iconSwitch, icon) {
+      let hiddenIcons = this._settings.get_strv("hidden-icons");
+      iconSwitch.set_active(!hiddenIcons.includes(icon));
+    }
+
+    _bindSwitchToSettings(iconSwitch, icon) {
+      iconSwitch.connect("state-set", (_, state) => {
+        let hiddenIcons = new Set(this._settings.get_strv("hidden-icons"));
+        if (state) {
+          hiddenIcons.delete(icon);
+        } else {
+          hiddenIcons.add(icon);
+        }
+        this._settings.set_strv("hidden-icons", Array.from(hiddenIcons));
+      });
+    }
   }
 );
 
