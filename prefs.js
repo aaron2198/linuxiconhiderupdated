@@ -46,7 +46,10 @@ var IconHiderPrefsWidget = GObject.registerClass(
     _loadIconSwitches() {
       let knownIcons = this._settings.get_strv("known-icons");
       knownIcons.forEach((icon, index) => {
-        this._addIconSwitch(icon, index + 1);
+        if (icon === "iconHiderUpdated") return;
+        else {
+          this._addIconSwitch(icon, index + 1);
+        }
       });
     }
 

@@ -51,8 +51,19 @@ class IconHiderExtension {
   }
 
   _createIndicator() {
-    this.indicator = new IconIndicator();
-    Main.panel.addToStatusArea("iconHiderUpdated", this.indicator, 1, "right");
+    // Check if the indicator already exists in the status area
+    if (!Main.panel.statusArea["iconHiderUpdated"]) {
+      this.indicator = new IconIndicator();
+      Main.panel.addToStatusArea(
+        "iconHiderUpdated",
+        this.indicator,
+        1,
+        "right"
+      );
+    } else {
+      // If it exists, reference the existing indicator
+      this.indicator = Main.panel.statusArea["iconHiderUpdated"];
+    }
   }
 
   _setupMenu() {
@@ -82,7 +93,9 @@ class IconHiderExtension {
   _gatherStatusAreaElements() {
     Object.keys(this.statusArea).forEach((role) => {
       if (!this.statusArea[role].is_finalized) {
-        this.knownIcons.add(role);
+        if (role !== "iconHiderUpdated") {
+          this.knownIcons.add(role);
+        }
       }
     });
     settings.set_strv("known-icons", Array.from(this.knownIcons));
@@ -90,7 +103,6 @@ class IconHiderExtension {
 
   _applyHiddenIcons() {
     this.knownIcons.forEach((iconRole) => {
-      if (iconRole === "iconHiderUpdated") return;
       if (this.hiddenIcons.has(iconRole)) {
         if (this.statusArea[iconRole]) this.statusArea[iconRole].hide();
       } else {
@@ -141,6 +153,12 @@ class IconHiderExtension {
     if (this._hiddenIconsChangedId) {
       settings.disconnect(this._hiddenIconsChangedId);
       this._hiddenIconsChangedId = null;
+    }
+
+    // Add cleanup for the indicator if necessary
+    if (this.indicator) {
+      this.indicator.destroy();
+      this.indicator = null;
     }
   }
 }
