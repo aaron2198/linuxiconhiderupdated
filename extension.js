@@ -141,7 +141,7 @@ class IconHiderExtension {
           this._applyHiddenIcons();
         }
       );
-    }, 500);
+    }, 1000);
   }
 
   disable() {
