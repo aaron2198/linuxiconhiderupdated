@@ -2,16 +2,9 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const { St, Clutter, GObject, Gio } = imports.gi;
 const { main: Main, popupMenu: PopupMenu, panelMenu: PanelMenu } = imports.ui;
 
-const currentExtension = ExtensionUtils.getCurrentExtension();
-const settings = ExtensionUtils.getSettings(
-  "org.gnome.shell.extensions.icon-hider-updated"
-);
-
-let iconHiderExtension;
-
 var IconIndicator = GObject.registerClass(
   class IconIndicator extends PanelMenu.Button {
-    _init() {
+    _init(currentExtension) {
       super._init(0.0, `${currentExtension.metadata.name} Indicator`, false);
       this._buildUI();
     }
@@ -38,6 +31,8 @@ class IconHiderExtension {
     this._hideIndicatorIconChangedId = null;
     this._hiddenIconsChangedId = null;
     this.timeout = null;
+    this.extension = null;
+    this.settings = null;
   }
 
   _toggleIconVisibility(iconRole) {
@@ -48,13 +43,13 @@ class IconHiderExtension {
       this.hiddenIcons.add(iconRole);
       this.statusArea[iconRole].hide();
     }
-    settings.set_strv("hidden-icons", Array.from(this.hiddenIcons));
+    this.settings.set_strv("hidden-icons", Array.from(this.hiddenIcons));
   }
 
   _createIndicator() {
     // Check if the indicator already exists in the status area
     if (!Main.panel.statusArea["iconHiderUpdated"]) {
-      this.indicator = new IconIndicator();
+      this.indicator = new IconIndicator(this.currentExtension);
       Main.panel.addToStatusArea(
         "iconHiderUpdated",
         this.indicator,
@@ -99,7 +94,7 @@ class IconHiderExtension {
         }
       }
     });
-    settings.set_strv("known-icons", Array.from(this.knownIcons));
+    this.settings.set_strv("known-icons", Array.from(this.knownIcons));
   }
 
   _applyHiddenIcons() {
@@ -114,20 +109,22 @@ class IconHiderExtension {
 
   _updateIndicatorVisibility() {
     if (this.indicator) {
-      settings.get_boolean("hide-indicator-icon")
+      this.settings.get_boolean("hide-indicator-icon")
         ? this.indicator.hide()
         : this.indicator.show();
     }
   }
 
   enable() {
-    setTimeout(() => {
+    this.timeout = setTimeout(() => {
       // Now instantiate complex objects
+      this.currentExtension = ExtensionUtils.getCurrentExtension();
+      this.settings = ExtensionUtils.getSettings(
+        "org.gnome.shell.extensions.icon-hider-updated"
+      );
       this.statusArea = Main.panel.statusArea;
-      this.hiddenIcons = new Set(settings.get_strv("hidden-icons"));
-      this.knownIcons = new Set(settings.get_strv("known-icons"));
-      this.indicator = new IconIndicator();
-      this.indicator._buildUI();
+      this.hiddenIcons = new Set(this.settings.get_strv("hidden-icons"));
+      this.knownIcons = new Set(this.settings.get_strv("known-icons"));
 
       this._gatherStatusAreaElements();
       this._applyHiddenIcons();
@@ -142,10 +139,10 @@ class IconHiderExtension {
         }
       );
 
-      this._hiddenIconsChangedId = settings.connect(
+      this._hiddenIconsChangedId = this.settings.connect(
         "changed::hidden-icons",
         () => {
-          this.hiddenIcons = new Set(settings.get_strv("hidden-icons"));
+          this.hiddenIcons = new Set(this.settings.get_strv("hidden-icons"));
           this._applyHiddenIcons();
         }
       );
@@ -154,12 +151,12 @@ class IconHiderExtension {
 
   disable() {
     if (this._hideIndicatorIconChangedId) {
-      settings.disconnect(this._hideIndicatorIconChangedId);
+      this.settings.disconnect(this._hideIndicatorIconChangedId);
       this._hideIndicatorIconChangedId = null;
     }
 
     if (this._hiddenIconsChangedId) {
-      settings.disconnect(this._hiddenIconsChangedId);
+      this.settings.disconnect(this._hiddenIconsChangedId);
       this._hiddenIconsChangedId = null;
     }
 
@@ -167,6 +164,9 @@ class IconHiderExtension {
     this.statusArea = null;
     this.hiddenIcons = null;
     this.knownIcons = null;
+    this.settings = null;
+    this.extension = null;
+
     if (this.indicator) {
       this.indicator.destroy();
       this.indicator = null;
