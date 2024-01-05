@@ -31,12 +31,13 @@ var IconIndicator = GObject.registerClass(
 
 class IconHiderExtension {
   _init() {
-    this.statusArea = Main.panel.statusArea;
-    this.hiddenIcons = new Set(settings.get_strv("hidden-icons"));
-    this.knownIcons = new Set(settings.get_strv("known-icons"));
+    this.statusArea = null;
+    this.hiddenIcons = null;
+    this.knownIcons = null;
     this.indicator = null;
     this._hideIndicatorIconChangedId = null;
     this._hiddenIconsChangedId = null;
+    this.timeout = null;
   }
 
   _toggleIconVisibility(iconRole) {
@@ -121,6 +122,13 @@ class IconHiderExtension {
 
   enable() {
     setTimeout(() => {
+      // Now instantiate complex objects
+      this.statusArea = Main.panel.statusArea;
+      this.hiddenIcons = new Set(settings.get_strv("hidden-icons"));
+      this.knownIcons = new Set(settings.get_strv("known-icons"));
+      this.indicator = new IconIndicator();
+      this.indicator._buildUI();
+
       this._gatherStatusAreaElements();
       this._applyHiddenIcons();
       this._createIndicator();
@@ -155,16 +163,23 @@ class IconHiderExtension {
       this._hiddenIconsChangedId = null;
     }
 
-    // Add cleanup for the indicator if necessary
+    // Nullify properties
+    this.statusArea = null;
+    this.hiddenIcons = null;
+    this.knownIcons = null;
     if (this.indicator) {
       this.indicator.destroy();
       this.indicator = null;
+    }
+
+    // Clear the timeout
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+      this.timeout = null;
     }
   }
 }
 
 function init() {
-  iconHiderExtension = new IconHiderExtension();
-  iconHiderExtension._init();
-  return iconHiderExtension;
+  return new IconHiderExtension();
 }
