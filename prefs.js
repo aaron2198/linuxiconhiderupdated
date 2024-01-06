@@ -7,29 +7,47 @@ function init() {
 }
 
 var IconHiderPrefsWidget = GObject.registerClass(
+  {
+    GTypeName: "IconHiderPrefsWidget",
+  },
   class IconHiderPrefsWidget extends Gtk.Box {
     _init(params) {
       super._init(params);
-      this.orientation = Gtk.Orientation.VERTICAL;
-      this.margin_top = 20;
-      this.margin_bottom = 20;
-      this.margin_start = 20;
-      this.margin_end = 20;
-      this.spacing = 10;
+      this._setupUI();
+    }
 
+    _setupUI() {
+      this._configureProperties();
+      this._initializeSettings();
+      this._createGrid();
+      this._addCheckBox("hide-indicator-icon", "Hide Indicator Icon");
+      this._loadIconSwitches();
+      this._addGitHubLink();
+    }
+
+    _configureProperties() {
+      this.orientation = Gtk.Orientation.VERTICAL;
+      this.margin_top =
+        this.margin_bottom =
+        this.margin_start =
+        this.margin_end =
+          20;
+      this.spacing = 10;
+    }
+
+    _initializeSettings() {
       this._settings = ExtensionUtils.getSettings(
         "org.gnome.shell.extensions.icon-hider-updated"
       );
+    }
 
+    _createGrid() {
       this._grid = new Gtk.Grid({
         column_spacing: 20,
         row_spacing: 10,
         column_homogeneous: false,
       });
       this.append(this._grid);
-      this._addCheckBox("hide-indicator-icon", "Hide Indicator Icon");
-      this._loadIconSwitches();
-      this._addGitHubLink();
     }
 
     _addCheckBox(key, label) {
@@ -46,8 +64,7 @@ var IconHiderPrefsWidget = GObject.registerClass(
     _loadIconSwitches() {
       let knownIcons = this._settings.get_strv("known-icons");
       knownIcons.forEach((icon, index) => {
-        if (icon === "iconHiderUpdated") return;
-        else {
+        if (icon !== "iconHiderUpdated") {
           this._addIconSwitch(icon, index + 1);
         }
       });
@@ -108,6 +125,5 @@ var IconHiderPrefsWidget = GObject.registerClass(
 );
 
 function buildPrefsWidget() {
-  let widget = new IconHiderPrefsWidget();
-  return widget;
+  return new IconHiderPrefsWidget();
 }

@@ -132,7 +132,7 @@ class IconHiderExtension {
       this._setupMenu();
       this._updateIndicatorVisibility();
 
-      this._hideIndicatorIconChangedId = settings.connect(
+      this._hideIndicatorIconChangedId = this.settings.connect(
         "changed::hide-indicator-icon",
         () => {
           this._updateIndicatorVisibility();
