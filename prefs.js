@@ -1,5 +1,5 @@
-const { GObject, Gtk, Gio, GLib } = imports.gi;
-const ExtensionUtils = imports.misc.extensionUtils;
+import { GObject, Gtk, Gio, GLib } from imports.gi;
+import ExtensionUtils from imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 
 function init() {
